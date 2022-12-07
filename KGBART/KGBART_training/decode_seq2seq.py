@@ -22,9 +22,7 @@ import json
 
 os.chdir("../")
 print("Current Working Directory ", os.getcwd())
-sys_path = os.path.join(os.getcwd(), 'KGBART')
-print(sys_path)
-sys.path.insert(1, sys_path)
+sys.path.insert(1, os.getcwd())
 from nn.data_parallel import DataParallelImbalance
 import KGBART_training.seq2seq_loader as seq2seq_loader
 from KGBART_model.tokenization_bart import MBartTokenizer, BartTokenizer
