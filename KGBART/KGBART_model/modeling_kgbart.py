@@ -1755,7 +1755,7 @@ class KGBartForConditionalGeneration(PretrainedBartModel):
 
         # # 计算encoder output contrastive_loss
         encoder_states = encoder_last_hidden_states[torch.cumsum(word_subword, 1)]
-        subword = torch.cumsum(word_subword, 1) - torch.ones(word_subword.size()).cuda()
+        subword = torch.cumsum(word_subword, 1) - torch.ones(word_subword.size(), dtype=torch.int64).cuda()
         encoder_states = torch.cat([torch.index_select(j, 0, i).unsqueeze(0)
                    for j, i in zip(encoder_last_hidden_states, torch.cumsum(subword, 1))])
         norm_rep = encoder_states / encoder_states.norm(dim=2, keepdim=True)
