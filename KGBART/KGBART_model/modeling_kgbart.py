@@ -1532,6 +1532,7 @@ class KGBartModel(PretrainedBartModel):
         return Seq2SeqModelOutput(
             last_hidden_state=decoder_outputs.last_hidden_state,
             decoder_past_key_values=decoder_outputs.past_key_values,
+            decoder_last_hidden_states=decoder_outputs.last_hidden_state,
             decoder_hidden_states=decoder_outputs.hidden_states,
             decoder_attentions=decoder_outputs.attentions,
             encoder_last_hidden_state=encoder_outputs.last_hidden_state,
