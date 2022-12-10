@@ -1734,14 +1734,14 @@ class KGBartForConditionalGeneration(PretrainedBartModel):
         loss = masked_lm_loss
         # 计算input contrastive_loss
         # TODO 单纯decoder的时候，不需要计算cl_loss
-        encoder_last_hidden_states = outputs[0]
-        # assert last_hidden_states.size() == torch.Size([bsz, seqlen, self.embed_dim])
-        norm_rep = encoder_last_hidden_states / encoder_last_hidden_states.norm(dim=2, keepdim=True)
-        input_cosine = torch.matmul(norm_rep, norm_rep.transpose(1, 2))
-        # assert cosine_scores.size() == torch.Size([bsz, seqlen, seqlen])
-        input_contrastive_loss = contrastive_loss(0.5, input_cosine, input_ids, 0, 0)
-
-        loss += input_contrastive_loss
+        # encoder_last_hidden_states = outputs[0]
+        # # assert last_hidden_states.size() == torch.Size([bsz, seqlen, self.embed_dim])
+        # norm_rep = encoder_last_hidden_states / encoder_last_hidden_states.norm(dim=2, keepdim=True)
+        # input_cosine = torch.matmul(norm_rep, norm_rep.transpose(1, 2))
+        # # assert cosine_scores.size() == torch.Size([bsz, seqlen, seqlen])
+        # input_contrastive_loss = contrastive_loss(0.5, input_cosine, input_ids, 0, 0)
+        #
+        # loss += input_contrastive_loss
         #
         # # 计算decoder output contrastive_loss
 
