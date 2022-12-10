@@ -43,7 +43,7 @@ from .modeling_outputs import (
     Seq2SeqSequenceClassifierOutput,
 )
 from .modeling_utils import PreTrainedModel
-from .loss import LabelSmoothingLoss
+from .loss import LabelSmoothingLoss, contrastive_loss
 
 logger = logging.getLogger(__name__)
 
@@ -1730,12 +1730,44 @@ class KGBartForConditionalGeneration(PretrainedBartModel):
                 # TODO(SS): do we need to ignore pad tokens in labels?
                 masked_lm_loss = loss_fct(lm_logits.view(-1, self.config.vocab_size), labels.view(-1))
 
+        loss = masked_lm_loss
+        # 计算input contrastive_loss
+        # TODO 单纯decoder的时候，不需要计算cl_loss
+        encoder_last_hidden_states = outputs[0]
+        # assert last_hidden_states.size() == torch.Size([bsz, seqlen, self.embed_dim])
+        norm_rep = encoder_last_hidden_states / encoder_last_hidden_states.norm(dim=2, keepdim=True)
+        input_cosine = torch.matmul(norm_rep, norm_rep.transpose(1, 2))
+        # assert cosine_scores.size() == torch.Size([bsz, seqlen, seqlen])
+        input_contrastive_loss = contrastive_loss(0.5, input_cosine, input_ids, 0, 0)
+
+        loss += input_contrastive_loss
+        #
+        # # 计算decoder output contrastive_loss
+
+        decoder_last_hidden_states = outputs.decoder_last_hidden_states
+        # assert last_hidden_states.size() == torch.Size([bsz, seqlen, self.embed_dim])
+        norm_rep = decoder_last_hidden_states / decoder_last_hidden_states.norm(dim=2, keepdim=True)
+        output_cosine = torch.matmul(norm_rep, norm_rep.transpose(1, 2))
+        output_cosine = output_cosine[:, :32, :32]
+        output_contrastive_loss = contrastive_loss(0.5, output_cosine, decoder_input_ids[:,:32], 0, 0)
+        loss += output_contrastive_loss
+
+        # # 计算encoder output contrastive_loss
+        encoder_states = encoder_last_hidden_states[torch.cumsum(word_subword, 1)]
+        subword = torch.cumsum(word_subword, 1) - torch.ones(word_subword.size(), dtype=torch.int64).cuda()
+        encoder_states = torch.cat([torch.index_select(j, 0, i).unsqueeze(0)
+                   for j, i in zip(encoder_last_hidden_states, subword)])
+        norm_rep = encoder_states / encoder_states.norm(dim=2, keepdim=True)
+        encoder_output_cosine = torch.matmul(norm_rep, norm_rep.transpose(1, 2))
+        encoder_output_contrastive_loss = contrastive_loss(0.5, encoder_output_cosine, word_subword, 0, 0)
+        loss += encoder_output_contrastive_loss
+
         if return_tuple:
             output = (lm_logits,) + outputs[1:]
             return ((masked_lm_loss,) + output) if masked_lm_loss is not None else output
 
         return Seq2SeqLMOutput(
-            loss=masked_lm_loss,
+            loss=loss,
             logits=lm_logits,
             decoder_past_key_values=outputs.decoder_past_key_values,
             decoder_hidden_states=outputs.decoder_hidden_states,
