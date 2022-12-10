@@ -1734,12 +1734,12 @@ class KGBartForConditionalGeneration(PretrainedBartModel):
         loss = masked_lm_loss
         # 计算input contrastive_loss
         # TODO 单纯decoder的时候，不需要计算cl_loss
-        # encoder_last_hidden_states = outputs[0]
-        # # assert last_hidden_states.size() == torch.Size([bsz, seqlen, self.embed_dim])
-        # norm_rep = encoder_last_hidden_states / encoder_last_hidden_states.norm(dim=2, keepdim=True)
-        # input_cosine = torch.matmul(norm_rep, norm_rep.transpose(1, 2))
-        # # assert cosine_scores.size() == torch.Size([bsz, seqlen, seqlen])
-        # input_contrastive_loss = contrastive_loss(0.5, input_cosine, input_ids, 0, 0)
+        encoder_last_hidden_states = outputs[0]
+        # assert last_hidden_states.size() == torch.Size([bsz, seqlen, self.embed_dim])
+        norm_rep = encoder_last_hidden_states / encoder_last_hidden_states.norm(dim=2, keepdim=True)
+        input_cosine = torch.matmul(norm_rep, norm_rep.transpose(1, 2))
+        # assert cosine_scores.size() == torch.Size([bsz, seqlen, seqlen])
+        input_contrastive_loss = contrastive_loss(0.5, input_cosine, input_ids, 0, 0)
         #
         # loss += input_contrastive_loss
         #
@@ -1754,7 +1754,7 @@ class KGBartForConditionalGeneration(PretrainedBartModel):
         # loss += output_contrastive_loss
 
         # # 计算encoder output contrastive_loss
-        encoder_states = encoder_last_hidden_states[torch.cumsum(word_subword, 1)]
+        # encoder_states = encoder_last_hidden_states[torch.cumsum(word_subword, 1)]
         # subword = torch.cumsum(word_subword, 1) - torch.ones(word_subword.size(), dtype=torch.int64).cuda()
         # encoder_states = torch.cat([torch.index_select(j, 0, i).unsqueeze(0)
         #            for j, i in zip(encoder_last_hidden_states, torch.cumsum(subword, 1))])
